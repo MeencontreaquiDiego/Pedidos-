@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>V&C Doces - Pedidos</title>
+    <style>
+        :root { --primary: #2563eb; --success: #16a34a; --danger: #dc2626; }
+        body { font-family: 'Segoe UI', sans-serif; background-color: #f3f4f6; margin: 0; padding: 20px; display: flex; justify-content: center; }
+        .card { background: white; width: 100%; max-width: 450px; padding: 20px; border-radius: 15px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); }
+        h2 { text-align: center; color: #1f2937; margin-bottom: 20px; border-bottom: 2px solid #f3f4f6; padding-bottom: 10px; }
+        .linha-pedido { display: flex; gap: 8px; margin-bottom: 12px; align-items: center; }
+        input.qtd, textarea, select { border: 1px solid #d1d5db; border-radius: 8px; font-size: 16px; }
+        input.qtd { width: 70px; padding: 12px; text-align: center; }
+        select.produto { flex: 1; padding: 12px; background-color: #fff; }
+        textarea { width: 100%; padding: 12px; box-sizing: border-box; resize: vertical; margin-top: 5px; font-family: inherit; }
+        .label-obs { display: block; margin-top: 15px; font-weight: 600; color: #4b5563; font-size: 14px; }
+        button { cursor: pointer; border: none; font-weight: 600; transition: opacity 0.2s; }
+        button:active { opacity: 0.7; }
+        .btn-add { background-color: var(--primary); color: white; width: 100%; padding: 12px; border-radius: 8px; margin-top: 10px; font-size: 15px; }
+        .btn-del { background-color: #fee2e2; color: var(--danger); padding: 10px; border-radius: 8px; width: 40px; font-size: 18px; }
+        .btn-finalizar { background-color: var(--success); color: white; width: 100%; padding: 15px; border-radius: 8px; font-size: 18px; margin-top: 25px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
+        
+        #modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 100; justify-content: center; align-items: center; padding: 20px; box-sizing: border-box; }
+        .modal-content { background: white; padding: 25px; border-radius: 12px; width: 100%; max-width: 400px; max-height: 80vh; overflow-y: auto; }
+        pre { background: #f9fafb; padding: 15px; border: 1px dashed #9ca3af; white-space: pre-wrap; font-family: monospace; font-size: 16px; line-height: 1.5; color: #374151; }
+        .modal-btns { display: flex; flex-direction: column; gap: 10px; margin-top: 20px; }
+        .btn-zap { background-color: #25D366; color: white; padding: 12px; border-radius: 8px; text-align: center; text-decoration: none; font-weight: bold; }
+        .btn-download { background-color: #008CBA; color: white; padding: 12px; border-radius: 8px; }
+        .btn-close { background-color: #6b7280; color: white; padding: 10px; border-radius: 8px; }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <h2>🍬 V&C Doces</h2>
+    <div id="lista-pedidos">
+        <div class="linha-pedido">
+            <input type="number" class="qtd" placeholder="Qtd" min="1">
+            <select class="produto">
+                <option value="" disabled selected>Selecione...</option>
+                <option value="Queijadinha 190gr">Queijadinha 190gr</option>
+                <option value="Queijadinha 220 Gr">Queijadinha 220 Gr</option>
+                <option value="Beliscão">Beliscão</option>
+                <option value="Batata">Batata</option>
+                <option value="Mini queijadinha">Mini queijadinha</option>
+                <option value="Broa">Broa</option>
+                <option value="Amanteigado côco">Amanteigado côco</option>
+                <option value="Amanteigado chocolate">Amanteigado chocolate</option>
+                <option value="Amanteigado doce de leite">Amanteigado doce de leite</option>
+                <option value="Canudo côco">Canudo côco</option>
+                <option value="Canudo chocolate">Canudo chocolate</option>
+                <option value="Canudo doce de leite">Canudo doce de leite</option>
+                <option value="Canudo sem recheio">Canudo sem recheio</option>
+                <option value="Rosquinha de côco">Rosquinha de côco</option>
+                <option value="Rosquinha de canela">Rosquinha de canela</option>
+                <option value="Suspiro">Suspiro</option>
+            </select>
+        </div>
+    </div>
+    
+    <button class="btn-add" onclick="addLinha()">+ Outro Produto</button>
+
+    <label class="label-obs" for="observacoes">Observações:</label>
+    <textarea id="observacoes" rows="3" placeholder="Digite aqui detalhes do pedido..."></textarea>
+
+    <button class="btn-finalizar" onclick="gerarResumo()">CONCLUIR PEDIDO</button>
+</div>
+
+<div id="modal">
+    <div class="modal-content">
+        <h3 style="margin-top:0">Resumo do Pedido</h3>
+        <pre id="preview-texto"></pre>
+        <div class="modal-btns">
+            <a id="link-whatsapp" class="btn-zap" target="_blank">Enviar por WhatsApp</a>
+            <button class="btn-download" onclick="baixarTXT()">Baixar Arquivo TXT</button>
+            <button class="btn-close" onclick="fecharModal()">Voltar / Editar</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    let textoGlobal = "";
+
+    function addLinha() {
+        const lista = document.getElementById("lista-pedidos");
+        const div = document.createElement("div");
+        div.className = "linha-pedido";
+        div.innerHTML = `
+            <input type="number" class="qtd" placeholder="Qtd" min="1">
+            <select class="produto">${document.querySelector('.produto').innerHTML}</select>
+            <button class="btn-del" onclick="this.parentElement.remove()">×</button>
+        `;
+        lista.appendChild(div);
+    }
+
+    function gerarResumo() {
+        const linhas = document.querySelectorAll(".linha-pedido");
+        const obs = document.getElementById("observacoes").value;
+        let itens = "";
+        let temItem = false;
+
+        linhas.forEach((linha) => {
+            const q = linha.querySelector(".qtd").value;
+            const p = linha.querySelector(".produto").value;
+            if(q && p) {
+                itens += `${q.padStart(2, '0')} x ${p}\n`;
+                temItem = true;
+            }
+        });
+
+        if(!temItem) return alert("Preencha a quantidade e o produto!");
+
+        const data = new Date().toLocaleString('pt-BR');
+        textoGlobal = `--- PEDIDO V&C DOCES ---\nData: ${data}\n\n`;
+        textoGlobal += itens;
+        
+        if(obs.trim() !== "") {
+            textoGlobal += `\nOBSERVAÇÕES:\n${obs}\n`;
+        }
+        
+        textoGlobal += `\n-----------------------`;
+        
+        document.getElementById("preview-texto").innerText = textoGlobal;
+        document.getElementById("link-whatsapp").href = "https://wa.me/?text=" + encodeURIComponent(textoGlobal);
+        document.getElementById("modal").style.display = "flex";
+    }
+
+    function fecharModal() { document.getElementById("modal").style.display = "none"; }
+
+    function baixarTXT() {
+        const blob = new Blob([textoGlobal], { type: "text/plain" });
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = `pedido_VC_${Date.now()}.txt`;
+        a.click();
+    }
+</script>
+
+</body>
+</html>
