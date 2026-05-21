@@ -10,10 +10,11 @@
         .card { background: white; width: 100%; max-width: 450px; padding: 20px; border-radius: 15px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); }
         h2 { text-align: center; color: #1f2937; margin-bottom: 20px; border-bottom: 2px solid #f3f4f6; padding-bottom: 10px; }
         .linha-pedido { display: flex; gap: 8px; margin-bottom: 12px; align-items: center; }
-        input.qtd, textarea, select { border: 1px solid #d1d5db; border-radius: 8px; font-size: 16px; }
+        input.qtd, textarea, select, input.texto-dados { border: 1px solid #d1d5db; border-radius: 8px; font-size: 16px; box-sizing: border-box; }
         input.qtd { width: 70px; padding: 12px; text-align: center; }
         select.produto { flex: 1; padding: 12px; background-color: #fff; }
-        textarea { width: 100%; padding: 12px; box-sizing: border-box; resize: vertical; margin-top: 5px; font-family: inherit; }
+        textarea { width: 100%; padding: 12px; resize: vertical; margin-top: 5px; font-family: inherit; }
+        input.texto-dados { width: 100%; padding: 12px; margin-top: 5px; }
         .label-obs { display: block; margin-top: 15px; font-weight: 600; color: #4b5563; font-size: 14px; }
         button { cursor: pointer; border: none; font-weight: 600; transition: opacity 0.2s; }
         button:active { opacity: 0.7; }
@@ -22,18 +23,32 @@
         .btn-finalizar { background-color: var(--success); color: white; width: 100%; padding: 15px; border-radius: 8px; font-size: 18px; margin-top: 25px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
         
         #modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 100; justify-content: center; align-items: center; padding: 20px; box-sizing: border-box; }
-        .modal-content { background: white; padding: 25px; border-radius: 12px; width: 100%; max-width: 400px; max-height: 80vh; overflow-y: auto; }
+        .modal-content { background: white; padding: 25px; border-radius: 12px; width: 100%; max-width: 450px; max-height: 90vh; overflow-y: auto; }
         pre { background: #f9fafb; padding: 15px; border: 1px dashed #9ca3af; white-space: pre-wrap; font-family: monospace; font-size: 16px; line-height: 1.5; color: #374151; margin-bottom: 15px; }
         
-        /* Estilos da área do QR Code */
         .qr-container { text-align: center; margin: 20px 0; padding: 10px; background-color: #f9fafb; border-radius: 8px; border: 1px dashed #d1d5db; }
         .qr-container p { font-size: 14px; color: #4b5563; font-weight: bold; margin: 0 0 10px 0; }
         .qr-container img { max-width: 180px; display: none; margin: 0 auto; background: white; padding: 5px; border-radius: 5px; }
         
         .modal-btns { display: flex; flex-direction: column; gap: 10px; margin-top: 20px; }
         .btn-zap { background-color: #25D366; color: white; padding: 12px; border-radius: 8px; text-align: center; text-decoration: none; font-weight: bold; }
-        .btn-download { background-color: #008CBA; color: white; padding: 12px; border-radius: 8px; }
+        .btn-print { background-color: #008CBA; color: white; padding: 12px; border-radius: 8px; font-size: 16px; }
         .btn-close { background-color: #6b7280; color: white; padding: 10px; border-radius: 8px; }
+
+        /* Área da etiqueta oculta na tela, aparece só na impressão */
+        #etiqueta-impressao { display: none; }
+
+        /* Configurações de Impressão A4 */
+        @media print {
+            body * { display: none !important; }
+            #etiqueta-impressao { display: block !important; width: 100%; max-width: 150mm; margin: 0 auto; padding: 20px; border: 3px double #000; font-family: 'Segoe UI', Arial, sans-serif; color: #000; background: white; box-sizing: border-box; }
+            .etiq-header { text-align: center; border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 20px; }
+            .etiq-header h1 { margin: 0; font-size: 28px; }
+            .etiq-secao { margin-bottom: 20px; font-size: 16px; line-height: 1.4; }
+            .etiq-secao strong { font-size: 18px; display: block; margin-bottom: 4px; border-bottom: 1px solid #ddd; }
+            .etiq-qr { text-align: center; margin-top: 30px; }
+            .etiq-qr img { max-width: 180px; border: 1px solid #000; padding: 5px; }
+        }
     </style>
 </head>
 <body>
@@ -68,7 +83,13 @@
     
     <button class="btn-add" onclick="addLinha()">+ Outro Produto</button>
 
-    <label class="label-obs" for="observacoes">Observações:</label>
+    <label class="label-obs" for="empresa-destinataria">Empresa Destinatária:</label>
+    <input type="text" id="empresa-destinataria" class="input-texto-dados" placeholder="Nome da empresa parceira...">
+
+    <label class="label-obs" for="endereco-entrega">Endereço de Entrega:</label>
+    <input type="text" id="endereco-entrega" class="input-texto-dados" placeholder="Rua, Número, Bairro, Cidade...">
+
+    <label class="label-obs" for="observacoes">Observações do Pedido:</label>
     <textarea id="observacoes" rows="3" placeholder="Digite aqui detalhes do pedido..."></textarea>
 
     <button class="btn-finalizar" onclick="gerarResumo()">CONCLUIR PEDIDO</button>
@@ -79,17 +100,40 @@
         <h3 style="margin-top:0">Resumo do Pedido</h3>
         <pre id="preview-texto"></pre>
         
-        <!-- Nova seção para exibir o QR Code -->
         <div class="qr-container">
-            <p>📷 QR Code do Pedido</p>
+            <p>📷 QR Code do Pedido (Vai na Etiqueta)</p>
             <img id="qrcode" src="" alt="QR Code do Pedido">
         </div>
 
         <div class="modal-btns">
+            <button class="btn-print" onclick="window.print()">🖨️ Imprimir Etiqueta A4</button>
             <a id="link-whatsapp" class="btn-zap" target="_blank">Enviar por WhatsApp</a>
-            <button class="btn-download" onclick="baixarTXT()">Baixar Arquivo TXT</button>
             <button class="btn-close" onclick="fecharModal()">Voltar / Editar</button>
         </div>
+    </div>
+</div>
+
+<!-- Estrutura oculta que só o driver de impressão lê -->
+<div id="etiqueta-impressao">
+    <div class="etiq-header">
+        <h1>🍬 V&C DOCES</h1>
+        <p style="margin: 5px 0 0 0; font-size: 14px; letter-spacing: 2px;">PRODUTOS DE QUALIDADE</p>
+    </div>
+    <div class="etiq-secao">
+        <strong>DESTINATÁRIO:</strong>
+        <span id="etiq-nome-empresa"></span>
+    </div>
+    <div class="etiq-secao">
+        <strong>ENDEREÇO DE ENTREGA:</strong>
+        <span id="etiq-rua-empresa"></span>
+    </div>
+    <div class="etiq-secao">
+        <strong>DATA DE ENVIO:</strong>
+        <span id="etiq-data-envio"></span>
+    </div>
+    <div class="etiq-qr">
+        <p style="margin: 0 0 5px 0; font-weight: bold; font-size: 14px;">CONTEÚDO DA CAIXA (ESCANEÁVEL)</p>
+        <img id="qrcode-impressao" src="" alt="QR Code">
     </div>
 </div>
 
@@ -121,11 +165,14 @@
     function gerarResumo() {
         const linhas = document.querySelectorAll(".linha-pedido");
         const obs = document.getElementById("observacoes").value;
+        const emp = document.getElementById("empresa-destinataria").value;
+        const end = document.getElementById("endereco-entrega").value;
+        
         let itens = "";
         let temItem = false;
 
         linhas.forEach((linha) => {
-            const q = linha.querySelector(".qtd").value;
+            const q = AppQtd = linha.querySelector(".qtd").value;
             const p = linha.querySelector(".produto").value;
             if(q && p) {
                 itens += `${q.padStart(2, '0')} x ${p}\n`;
@@ -136,36 +183,39 @@
         if(!temItem) return alert("Preencha a quantidade e o produto!");
 
         const data = new Date().toLocaleString('pt-BR');
-        textoGlobal = `--- PEDIDO V&C DOCES ---\nData: ${data}\n\n`;
-        textoGlobal += itens;
+        
+        // Monta texto estruturado
+        textoGlobal = `--- PEDIDO V&C DOCES ---\nData: ${data}\n`;
+        if(emp.trim() !== "") textoGlobal += `Cliente: ${emp}\n`;
+        if(end.trim() !== "") textoGlobal += `Destino: ${end}\n`;
+        textoGlobal += `\n[ITENS]\n${itens}`;
         
         if(obs.trim() !== "") {
             textoGlobal += `\nOBSERVAÇÕES:\n${obs}\n`;
         }
+        textoGlobal += `-----------------------`;
         
-        textoGlobal += `\n-----------------------`;
-        
+        // Alimenta campos da tela
         document.getElementById("preview-texto").innerText = textoGlobal;
         document.getElementById("link-whatsapp").href = "https://wa.me/?text=" + encodeURIComponent(textoGlobal);
         
-        // Código que gera o QR Code usando o texto do pedido
-        const urlQrCode = "https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=" + encodeURIComponent(textoGlobal);
-        const imgQr = document.getElementById("qrcode");
-        imgQr.src = urlQrCode;
-        imgQr.style.display = "block"; // Torna o QR Code visível
+        // Alimenta campos da etiqueta oculta de impressão
+        document.getElementById("etiq-nome-empresa").innerText = emp.trim() !== "" ? emp : "Não Informado";
+        document.getElementById("etiq-rua-empresa").innerText = end.trim() !== "" ? end : "Não Informado";
+        document.getElementById("etiq-data-envio").innerText = data;
+
+        // URL do QR Code
+        const urlQrCode = "https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=" + encodeURIComponent(textoGlobal);
+        
+        // Atualiza QR da tela e QR da impressão
+        document.getElementById("qrcode").src = urlQrCode;
+        document.getElementById("qrcode").style.display = "block";
+        document.getElementById("qrcode-impressao").src = urlQrCode;
 
         document.getElementById("modal").style.display = "flex";
     }
 
     function fecharModal() { document.getElementById("modal").style.display = "none"; }
-
-    function baixarTXT() {
-        const blob = new Blob([textoGlobal], { type: "text/plain" });
-        const a = document.createElement("a");
-        a.href = URL.createObjectURL(blob);
-        a.download = `pedido_VC_${Date.now()}.txt`;
-        a.click();
-    }
 </script>
 
 </body>
