@@ -56,6 +56,7 @@
                 <option value="Rosquinha de canela">Rosquinha de canela</option>
                 <option value="Suspiro">Suspiro</option>
             </select>
+            <button class="btn-del" onclick="removerLinha(this)">×</button>
         </div>
     </div>
     
@@ -86,12 +87,25 @@
         const lista = document.getElementById("lista-pedidos");
         const div = document.createElement("div");
         div.className = "linha-pedido";
+        // Atualizado para usar a nova função removerLinha
         div.innerHTML = `
             <input type="number" class="qtd" placeholder="Qtd" min="1">
             <select class="produto">${document.querySelector('.produto').innerHTML}</select>
-            <button class="btn-del" onclick="this.parentElement.remove()">×</button>
+            <button class="btn-del" onclick="removerLinha(this)">×</button>
         `;
         lista.appendChild(div);
+    }
+
+    // Nova função para remover a linha com segurança
+    function removerLinha(botao) {
+        const linhas = document.querySelectorAll(".linha-pedido");
+        if (linhas.length > 1) {
+            botao.parentElement.remove();
+        } else {
+            // Se for a última linha, apenas limpa os valores
+            botao.parentElement.querySelector(".qtd").value = "";
+            botao.parentElement.querySelector(".produto").value = "";
+        }
     }
 
     function gerarResumo() {
