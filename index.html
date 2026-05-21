@@ -23,7 +23,13 @@
         
         #modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 100; justify-content: center; align-items: center; padding: 20px; box-sizing: border-box; }
         .modal-content { background: white; padding: 25px; border-radius: 12px; width: 100%; max-width: 400px; max-height: 80vh; overflow-y: auto; }
-        pre { background: #f9fafb; padding: 15px; border: 1px dashed #9ca3af; white-space: pre-wrap; font-family: monospace; font-size: 16px; line-height: 1.5; color: #374151; }
+        pre { background: #f9fafb; padding: 15px; border: 1px dashed #9ca3af; white-space: pre-wrap; font-family: monospace; font-size: 16px; line-height: 1.5; color: #374151; margin-bottom: 15px; }
+        
+        /* Estilos da área do QR Code */
+        .qr-container { text-align: center; margin: 20px 0; padding: 10px; background-color: #f9fafb; border-radius: 8px; border: 1px dashed #d1d5db; }
+        .qr-container p { font-size: 14px; color: #4b5563; font-weight: bold; margin: 0 0 10px 0; }
+        .qr-container img { max-width: 180px; display: none; margin: 0 auto; background: white; padding: 5px; border-radius: 5px; }
+        
         .modal-btns { display: flex; flex-direction: column; gap: 10px; margin-top: 20px; }
         .btn-zap { background-color: #25D366; color: white; padding: 12px; border-radius: 8px; text-align: center; text-decoration: none; font-weight: bold; }
         .btn-download { background-color: #008CBA; color: white; padding: 12px; border-radius: 8px; }
@@ -72,6 +78,13 @@
     <div class="modal-content">
         <h3 style="margin-top:0">Resumo do Pedido</h3>
         <pre id="preview-texto"></pre>
+        
+        <!-- Nova seção para exibir o QR Code -->
+        <div class="qr-container">
+            <p>📷 QR Code do Pedido</p>
+            <img id="qrcode" src="" alt="QR Code do Pedido">
+        </div>
+
         <div class="modal-btns">
             <a id="link-whatsapp" class="btn-zap" target="_blank">Enviar por WhatsApp</a>
             <button class="btn-download" onclick="baixarTXT()">Baixar Arquivo TXT</button>
@@ -87,7 +100,6 @@
         const lista = document.getElementById("lista-pedidos");
         const div = document.createElement("div");
         div.className = "linha-pedido";
-        // Atualizado para usar a nova função removerLinha
         div.innerHTML = `
             <input type="number" class="qtd" placeholder="Qtd" min="1">
             <select class="produto">${document.querySelector('.produto').innerHTML}</select>
@@ -96,13 +108,11 @@
         lista.appendChild(div);
     }
 
-    // Nova função para remover a linha com segurança
     function removerLinha(botao) {
         const linhas = document.querySelectorAll(".linha-pedido");
         if (linhas.length > 1) {
             botao.parentElement.remove();
         } else {
-            // Se for a última linha, apenas limpa os valores
             botao.parentElement.querySelector(".qtd").value = "";
             botao.parentElement.querySelector(".produto").value = "";
         }
@@ -137,6 +147,13 @@
         
         document.getElementById("preview-texto").innerText = textoGlobal;
         document.getElementById("link-whatsapp").href = "https://wa.me/?text=" + encodeURIComponent(textoGlobal);
+        
+        // Código que gera o QR Code usando o texto do pedido
+        const urlQrCode = "https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=" + encodeURIComponent(textoGlobal);
+        const imgQr = document.getElementById("qrcode");
+        imgQr.src = urlQrCode;
+        imgQr.style.display = "block"; // Torna o QR Code visível
+
         document.getElementById("modal").style.display = "flex";
     }
 
