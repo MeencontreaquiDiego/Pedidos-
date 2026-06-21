@@ -2,144 +2,53 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <title>Pedido de Venda Digital Interativo</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>V&C Doces - Pedido</title>
     <style>
-        *, *::before, *::after { box-sizing: border-box; }
-        @page { size: A4; margin: 10mm 10mm; background-color: #ffffff; }
-        body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; margin: 0; padding: 0; color: #2c3e50; font-size: 9.5pt; line-height: 1.2; }
-        .header-container { display: table; width: 100%; border-bottom: 2px solid #1a365d; padding-bottom: 8px; margin-bottom: 12px; }
-        .header-left { display: table-cell; vertical-align: middle; width: 65%; }
-        .header-right { display: table-cell; vertical-align: middle; width: 35%; text-align: right; }
-        h1 { color: #1a365d; font-size: 20pt; margin: 0 0 2px 0; text-transform: uppercase; letter-spacing: 0.5px; }
-        .subtitle { font-size: 9pt; color: #4a5568; margin: 0; }
-        .order-badge { background-color: #ebf8ff; border: 1px solid #bee3f8; padding: 6px 12px; border-radius: 4px; display: inline-block; text-align: left; }
-        .order-badge table { border-collapse: collapse; }
-        .section-title { font-size: 10pt; font-weight: bold; color: #1a365d; text-transform: uppercase; margin: 10px 0 6px 0; border-left: 3px solid #1a365d; padding-left: 6px; }
-        .form-table { width: 100%; border-collapse: collapse; margin-bottom: 6px; }
-        .form-table td { border: 1px solid #cbd5e0; padding: 4px 8px; vertical-align: top; background-color: #ffffff; }
-        .label { font-size: 8pt; color: #4a5568; font-weight: bold; text-transform: uppercase; display: block; margin-bottom: 2px; }
-        input[type="text"] { border: none; background: transparent; width: 100%; font-family: inherit; font-size: 10pt; color: #1a202c; padding: 2px 0; outline: none; }
-        .items-table { width: 100%; border-collapse: collapse; margin-top: 4px; margin-bottom: 10px; }
-        .items-table th { background-color: #1a365d; color: #ffffff; font-weight: bold; font-size: 8.5pt; text-transform: uppercase; padding: 6px 8px; border: 1px solid #1a365d; text-align: left; }
-        .items-table th.center { text-align: center; }
-        .items-table th.right { text-align: right; }
-        .items-table td { border: 1px solid #cbd5e0; padding: 3px 6px; font-size: 9.5pt; background-color: #ffffff; vertical-align: middle; }
-        .items-table td.center { text-align: center; }
-        .summary-container { display: table; width: 100%; margin-top: 8px; }
-        .summary-left { display: table-cell; width: 55%; vertical-align: top; padding-right: 15px; }
-        .summary-right { display: table-cell; width: 45%; vertical-align: top; }
-        .total-box { width: 100%; border-collapse: collapse; }
-        .total-box td { padding: 6px 10px; border: 1px solid #cbd5e0; }
-        .total-box td.label-total { background-color: #f7fafc; font-weight: bold; color: #4a5568; text-align: right; width: 55%; font-size: 9pt; }
-        .total-box td.value-total { background-color: #edf2f7; font-weight: bold; color: #1a365d; }
-        .signature-box { border: 1px dashed #cbd5e0; border-radius: 4px; padding: 12px; text-align: center; background-color: #ffffff; font-size: 8.5pt; color: #4a5568; }
-        .signature-line { width: 75%; margin: 20px auto 4px auto; border-top: 1px solid #718096; }
-        .footer-note { margin-top: 15px; font-size: 7.5pt; color: #a0aec0; text-align: center; border-top: 1px solid #e2e8f0; padding-top: 6px; }
+        body { font-family: Arial, sans-serif; margin: 15px; color: #333; background-color: #f9f9f9; }
+        .container { max-width: 500px; margin: 0 auto; background: #fff; padding: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        h2 { text-align: center; color: #d63384; margin-top: 0; }
+        label { font-weight: bold; display: block; margin-top: 10px; font-size: 14px; }
+        input, select { width: 100%; padding: 8px; margin-top: 4px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; font-size: 15px; }
+        .btn { width: 100%; background: #28a745; color: white; padding: 12px; border: none; border-radius: 4px; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 20px; }
+        .btn:hover { background: #218838; }
+        @media print { .btn { display: none; } body { background: #fff; margin: 0; } .container { box-shadow: none; padding: 0; } }
     </style>
 </head>
 <body>
-    <div class="header-container">
-        <div class="header-left">
-            <h1>Pedido de Venda</h1>
-            <p class="subtitle">Formulário Digital Preenchível</p>
-        </div>
-        <div class="header-right">
-            <div class="order-badge">
-                <table>
-                    <tr>
-                        <td><span class="label">Nº:</span></td>
-                        <td><input type="text" placeholder="..." style="font-weight: bold; color: #1a365d; width: 60px;"></td>
-                    </tr>
-                    <tr>
-                        <td><span class="label">DATA:</span></td>
-                        <td><input type="text" placeholder="DD/MM/AAAA" style="width: 85px;"></td>
-                    </tr>
-                </table>
-            </div>
-        </div>
-    </div>
 
-    <table class="form-table">
-        <tr>
-            <td style="width: 50%;"><span class="label">Vendedor</span><input type="text" placeholder="Nome do vendedor"></td>
-            <td style="width: 50%;"><span class="label">Fornecedor / Empresa</span><input type="text" placeholder="Nome do fornecedor"></td>
-        </tr>
-    </table>
+<div class="container">
+    <h2>V&C Doces - Novo Pedido</h2>
+    
+    <label>Nome do Cliente:</label>
+    <input type="text" placeholder="Digite o nome">
 
-    <div class="section-title">Dados do Cliente</div>
-    <table class="form-table">
-        <tr><td colspan="3"><span class="label">Cliente / Razão Social</span><input type="text" placeholder="Nome ou Razão Social"></td></tr>
-        <tr>
-            <td style="width: 60%;"><span class="label">Endereço</span><input type="text" placeholder="Rua, Av, etc."></td>
-            <td style="width: 15%;"><span class="label">Nº</span><input type="text" placeholder="123"></td>
-            <td style="width: 25%;"><span class="label">Bairro</span><input type="text" placeholder="Bairro"></td>
-        </tr>
-        <tr>
-            <td style="width: 40%;"><span class="label">Cidade</span><input type="text" placeholder="Cidade"></td>
-            <td style="width: 20%;"><span class="label">Estado</span><input type="text" placeholder="UF"></td>
-            <td style="width: 40%;"><span class="label">CEP</span><input type="text" placeholder="00000-000"></td>
-        </tr>
-        <tr>
-            <td style="width: 50%;"><span class="label">CNPJ / CPF</span><input type="text" placeholder="00.000.000/0001-00"></td>
-            <td colspan="2" style="width: 50%;"><span class="label">Inscrição Estadual / RG</span><input type="text" placeholder="Inscrição ou RG"></td>
-        </tr>
-        <tr>
-            <td style="width: 50%;"><span class="label">E-mail</span><input type="text" placeholder="cliente@email.com"></td>
-            <td colspan="2" style="width: 50%;"><span class="label">Telefone / Celular</span><input type="text" placeholder="(00) 00000-0000"></td>
-        </tr>
-    </table>
+    <label>WhatsApp / Telefone:</label>
+    <input type="tel" placeholder="(00) 00000-0000">
 
-    <div class="section-title">Condições Comerciais e Logística</div>
-    <table class="form-table">
-        <tr>
-            <td style="width: 50%;"><span class="label">Condições de Pagamento</span><input type="text" placeholder="Dinheiro, PIX, Cartão..."></td>
-            <td style="width: 50%;"><span class="label">Transportadora / Frete</span><input type="text" placeholder="Dados de entrega"></td>
-        </tr>
-    </table>
+    <label>Produto / Doce:</label>
+    <select>
+        <option value="">Selecione um produto...</option>
+        <option value="bolo">Bolo de Pote</option>
+        <option value="brigadeiro">Cento de Brigadeiro</option>
+        <option value="coxinha">Coxinha Doce</option>
+        <option value="outro">Outros / Encomenda Personalizada</option>
+    </select>
 
-    <div class="section-title">Descrição dos Itens</div>
-    <table class="items-table">
-        <thead>
-            <tr>
-                <th class="center" style="width: 6%;">Item</th>
-                <th class="center" style="width: 10%;">Quant.</th>
-                <th class="center" style="width: 10%;">Unid.</th>
-                <th class="center" style="width: 12%;">Código</th>
-                <th style="width: 38%;">Descrição do Produto / Serviço</th>
-                <th class="right" style="width: 12%;">Preço Unit.</th>
-                <th class="right" style="width: 12%;">Total</th>
-            </tr>
-        </thead>
-        <tbody>
-            <!-- Linhas da Tabela -->
-            <tr><td class="center" style="color:#a0aec0; font-size: 8pt;">01</td><td><input type="text" style="text-align:center;"></td><td><input type="text" style="text-align:center;"></td><td><input type="text" style="text-align:center;"></td><td><input type="text"></td><td><input type="text" style="text-align:right;" placeholder="R$"></td><td><input type="text" style="text-align:right;" placeholder="R$"></td></tr>
-            <tr><td class="center" style="color:#a0aec0; font-size: 8pt;">02</td><td><input type="text" style="text-align:center;"></td><td><input type="text" style="text-align:center;"></td><td><input type="text" style="text-align:center;"></td><td><input type="text"></td><td><input type="text" style="text-align:right;" placeholder="R$"></td><td><input type="text" style="text-align:right;" placeholder="R$"></td></tr>
-            <tr><td class="center" style="color:#a0aec0; font-size: 8pt;">03</td><td><input type="text" style="text-align:center;"></td><td><input type="text" style="text-align:center;"></td><td><input type="text" style="text-align:center;"></td><td><input type="text"></td><td><input type="text" style="text-align:right;" placeholder="R$"></td><td><input type="text" style="text-align:right;" placeholder="R$"></td></tr>
-            <tr><td class="center" style="color:#a0aec0; font-size: 8pt;">04</td><td><input type="text" style="text-align:center;"></td><td><input type="text" style="text-align:center;"></td><td><input type="text" style="text-align:center;"></td><td><input type="text"></td><td><input type="text" style="text-align:right;" placeholder="R$"></td><td><input type="text" style="text-align:right;" placeholder="R$"></td></tr>
-            <tr><td class="center" style="color:#a0aec0; font-size: 8pt;">05</td><td><input type="text" style="text-align:center;"></td><td><input type="text" style="text-align:center;"></td><td><input type="text" style="text-align:center;"></td><td><input type="text"></td><td><input type="text" style="text-align:right;" placeholder="R$"></td><td><input type="text" style="text-align:right;" placeholder="R$"></td></tr>
-            <tr><td class="center" style="color:#a0aec0; font-size: 8pt;">06</td><td><input type="text" style="text-align:center;"></td><td><input type="text" style="text-align:center;"></td><td><input type="text" style="text-align:center;"></td><td><input type="text"></td><td><input type="text" style="text-align:right;" placeholder="R$"></td><td><input type="text" style="text-align:right;" placeholder="R$"></td></tr>
-            <tr><td class="center" style="color:#a0aec0; font-size: 8pt;">07</td><td><input type="text" style="text-align:center;"></td><td><input type="text" style="text-align:center;"></td><td><input type="text" style="text-align:center;"></td><td><input type="text"></td><td><input type="text" style="text-align:right;" placeholder="R$"></td><td><input type="text" style="text-align:right;" placeholder="R$"></td></tr>
-            <tr><td class="center" style="color:#a0aec0; font-size: 8pt;">08</td><td><input type="text" style="text-align:center;"></td><td><input type="text" style="text-align:center;"></td><td><input type="text" style="text-align:center;"></td><td><input type="text"></td><td><input type="text" style="text-align:right;" placeholder="R$"></td><td><input type="text" style="text-align:right;" placeholder="R$"></td></tr>
-            <tr><td class="center" style="color:#a0aec0; font-size: 8pt;">09</td><td><input type="text" style="text-align:center;"></td><td><input type="text" style="text-align:center;"></td><td><input type="text" style="text-align:center;"></td><td><input type="text"></td><td><input type="text" style="text-align:right;" placeholder="R$"></td><td><input type="text" style="text-align:right;" placeholder="R$"></td></tr>
-            <tr><td class="center" style="color:#a0aec0; font-size: 8pt;">10</td><td><input type="text" style="text-align:center;"></td><td><input type="text" style="text-align:center;"></td><td><input type="text" style="text-align:center;"></td><td><input type="text"></td><td><input type="text" style="text-align:right;" placeholder="R$"></td><td><input type="text" style="text-align:right;" placeholder="R$"></td></tr>
-        </tbody>
-    </table>
+    <label>Quantidade:</label>
+    <input type="number" min="1" value="1">
 
-    <div class="summary-container">
-        <div class="summary-left">
-            <div class="signature-box">
-                <span class="label" style="font-size: 7.5pt;">Observação: As mercadorias viajam por conta e risco do comprador.</span>
-                <div class="signature-line"></div>Assinatura do(s) Comprador(es)
-            </div>
-        </div>
-        <div class="summary-right">
-            <table class="total-box">
-                <tr><td class="label-total">Subtotal dos Itens</td><td><input type="text" style="text-align:right;" placeholder="R$ 0,00"></td></tr>
-                <tr><td class="label-total">Desconto / Frete</td><td><input type="text" style="text-align:right;" placeholder="R$ 0,00"></td></tr>
-                <tr><td class="label-total" style="font-size: 10pt; color: #1a365d;">TOTAL GERAL</td><td class="value-total"><input type="text" style="text-align:right; font-weight:bold; color: #1a365d;" placeholder="R$ 0,00"></td></tr>
-            </table>
-        </div>
-    </div>
-    <div class="footer-note">Formulário Digital de Pedidos • Pronto para Preenchimento e Impressão.</div>
+    <label>Valor Total (R$):</label>
+    <input type="number" step="0.01" placeholder="0,00">
+
+    <label>Data de Entrega:</label>
+    <input type="date">
+
+    <label>Observações / Detalhes:</label>
+    <input type="text" placeholder="Ex: Sem lactose, fita azul...">
+
+    <button class="btn" onclick="window.print()">Gerar PDF do Pedido</button>
+</div>
+
 </body>
 </html>
