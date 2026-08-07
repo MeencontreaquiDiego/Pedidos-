@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Área por Foto</title>
+<style>
+  :root {
+    --bg: #f3f4f6;
+    --card: #ffffff;
+    --text: #1f2937;
+    --muted: #6b7280;
+    --primary: #2563eb;
+    --primary-hover: #1d4ed8;
+    --success: #16a34a;
+    --danger: #dc2626;
+    --border: #e5e7eb;
+    --ref-color: #f59e0b;
+    --room-color: #16a34a;
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, 'Segoe UI', Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    margin: 0;
+    padding: 16px;
+    display: flex;
+    justify-content: center;
+  }
+  .app {
+    width: 100%;
+    max-width: 640px;
+  }
+  h1 {
+    font-size: 20px;
+    margin: 8px 0 12px;
+    text-align: center;
+  }
+  .card {
+    background: var(--card);
+    border-radius: 12px;
+    padding: 16px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+    margin-bottom: 12px;
+  }
+  .total {
+    text-align: center;
+    padding: 20px;
+  }
+  .total .valor {
+    font-size: 36px;
+    font-weight: 700;
+    color: var(--primary);
+  }
+  .total .rotulo {
+    font-size: 13px;
+    color: var(--muted);
+    margin-top: 4px;
+  }
+  button, .btn {
+    cursor: pointer;
+    border: none;
+    border-radius: 8px;
+    font-size: 15px;
+    font-weight: 600;
+    padding: 12px 16px;
+    font-family: inherit;
+  }
+  .btn-primary { background: var(--primary); color: white; width: 100%; }
+  .btn-primary:hover { background: var(--primary-hover); }
+  .btn-primary:disabled { background: #9ca3af; cursor: not-allowed; }
+  .btn-secondary { background: #e5e7eb; color: var(--text); }
+  .btn-danger { background: #fee2e2; color: var(--danger); padding: 8px 12px; font-size: 13px; }
+  .btn-success { background: var(--success); color: white; width: 100%; }
+  .row { display: flex; gap: 8px; align-items: center; }
+  .comodo {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    padding: 10px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    margin-bottom: 8px;
+  }
+  .comodo img {
+    width: 64px;
+    height: 64px;
+    object-fit: cover;
+    border-radius: 8px;
+    flex-shrink: 0;
+  }
+  .comodo .info { flex: 1; min-width: 0; }
+  .comodo .nome { font-weight: 600; }
+  .comodo .area { color: var(--muted); font-size: 14px; }
+  .vazio {
+    text-align: center;
+    color: var(--muted);
+    padding: 24px;
+    font-size: 14px;
+  }
+  label { font-size: 14px; font-weight: 600; color: #4b5563; display: block; margin: 12px 0 6px; }
+  input[type="text"], input[type="number"], select {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 15px;
+    font-family: inherit;
+  }
+  .instrucao {
+    background: #eff6ff;
+    border-left: 4px solid var(--primary);
+    padding: 10px 12px;
+    border-radius: 6px;
+    font-size: 14px;
+    margin: 12px 0;
+  }
+  .instrucao.ref { background: #fffbeb; border-color: var(--ref-color); }
+  .instrucao.room { background: #f0fdf4; border-color: var(--room-color); }
+  .canvas-wrap {
+    position: relative;
+    width: 100%;
+    margin: 12px 0;
+    background: #000;
+    border-radius: 8px;
+    overflow: hidden;
+    touch-action: none;
+  }
+  canvas {
+    display: block;
+    width: 100%;
+    height: auto;
+    cursor: crosshair;
+  }
+  .contador {
+    display: inline-block;
+    background: white;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-weight: 700;
+    font-size: 13px;
+    margin-left: 6px;
+  }
+  .contador.ref { color: var(--ref-color); }
+  .contador.room { color: var(--room-color); }
+  .medidas-ref { display: flex; gap: 8px; }
+  .medidas-ref > div { flex: 1; }
+  .resultado {
+    text-align: center;
+    padding: 20px;
+    background: #f0fdf4;
+    border-radius: 10px;
+    margin: 12px 0;
+  }
+  .resultado .valor {
+    font-size: 32px;
+    font-weight: 700;
+    color: var(--success);
+  }
+  .hidden { display: none !important; }
+  .footer-btns { display: flex; gap: 8px; margin-top: 12px; }
+  .footer-btns > * { flex: 1; }
+</style>
+</head>
+<body>
+<div class="app">
+  <h1>📐 Calculadora de Área por Foto</h1>
+
+  <!-- Tela inicial: lista de cômodos e total -->
+  <div id="tela-lista">
+    <div class="card total">
+      <div class="valor" id="total-area">0,00 m²</div>
+      <div class="rotulo">área total de <span id="total-count">0</span> cômodo(s)</div>
+    </div>
+
+    <div class="card">
+      <div id="lista-comodos"></div>
+      <button class="btn-primary" onclick="iniciarAdicao()">+ Adicionar cômodo</button>
+    </div>
+
+    <div class="card" style="font-size:13px; color:var(--muted); line-height:1.5">
+      <strong>Como funciona:</strong> tire uma foto do cômodo mostrando o chão inteiro e um objeto de tamanho conhecido apoiado no chão (folha A4, folha carta, etc.). O site usa o objeto como referência de escala para corrigir a perspectiva e estimar a área real. A precisão depende de você marcar os cantos com cuidado.
+    </div>
+  </div>
+
+  <!-- Tela de adição -->
+  <div id="tela-adicionar" class="hidden">
+    <div class="card">
+      <!-- Passo 1: upload -->
+      <div id="passo-upload">
+        <label>1. Foto do cômodo (com objeto de referência no chão)</label>
+        <input type="file" id="arquivo-foto" accept="image/*" capture="environment">
+      </div>
+
+      <!-- Passo 2: referência -->
+      <div id="passo-referencia" class="hidden">
+        <label>2. Objeto de referência</label>
+        <select id="tipo-referencia" onchange="atualizarMedidasRef()">
+          <option value="A4">Folha A4 (21 × 29,7 cm)</option>
+          <option value="A3">Folha A3 (29,7 × 42 cm)</option>
+          <option value="carta">Folha Carta (21,6 × 27,9 cm)</option>
+          <option value="azulejo">Azulejo padrão (30 × 30 cm)</option>
+          <option value="personalizado">Personalizado…</option>
+        </select>
+        <div id="medidas-personalizadas" class="medidas-ref hidden" style="margin-top:8px">
+          <div>
+            <label style="margin-top:0">Largura (cm)</label>
+            <input type="number" id="ref-largura" step="0.1" value="21">
+          </div>
+          <div>
+            <label style="margin-top:0">Altura (cm)</label>
+            <input type="number" id="ref-altura" step="0.1" value="29.7">
+          </div>
+        </div>
+
+        <div class="instrucao ref">
+          <strong>Marque os 4 cantos do objeto de referência</strong> na ordem:<br>
+          superior esquerdo → superior direito → inferior direito → inferior esquerdo
+          <span class="contador ref" id="cont-ref">0/4</span>
+        </div>
+        <div class="canvas-wrap">
+          <canvas id="canvas-foto"></canvas>
+        </div>
+        <div class="row">
+          <button class="btn-secondary" onclick="desfazerRef()">↶ Desfazer</button>
+          <button class="btn-secondary" onclick="limparRef()">Limpar refs</button>
+        </div>
+
+        <div id="bloco-cantos-comodo" class="hidden">
+          <div class="instrucao room">
+            <strong>Agora marque os 4 cantos do cômodo</strong> (no piso), na mesma ordem que os cantos da referência.
+            <span class="contador room" id="cont-room">0/4</span>
+          </div>
+          <div class="row">
+            <button class="btn-secondary" onclick="desfazerComodo()">↶ Desfazer</button>
+            <button class="btn-secondary" onclick="limparComodo()">Limpar cômodo</button>
+          </div>
+        </div>
+
+        <div id="bloco-resultado" class="hidden">
+          <div class="resultado">
+            <div class="valor" id="area-calculada">— m²</div>
+            <div style="color:var(--muted); font-size:13px; margin-top:4px">área estimada do cômodo</div>
+          </div>
+          <label>Nome do cômodo</label>
+          <input type="text" id="nome-comodo" placeholder="Ex: Sala, Cozinha, Quarto 1">
+          <button class="btn-success" style="margin-top:12px" onclick="salvarComodo()">💾 Salvar cômodo</button>
+        </div>
+      </div>
+
+      <div class="footer-btns">
+        <button class="btn-secondary" onclick="voltarLista()">Cancelar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// -------- Estado --------
+const STORAGE_KEY = 'comodos-area-v1';
+let comodos = carregar();
+let imgDataUrl = null;      // foto atual em data URL
+let imgEl = null;           // Image element carregada
+let pontosRef = [];         // pontos ref no canvas (coords do canvas)
+let pontosComodo = [];      // pontos cômodo no canvas
+let escala = 1;             // canvas pixel → image pixel
+let areaCalculada = null;   // em m²
+
+// -------- Persistência --------
+function carregar() {
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; }
+  catch { return []; }
+}
+function salvar() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(comodos));
+}
+
+// -------- Renderização da lista --------
+function renderLista() {
+  const el = document.getElementById('lista-comodos');
+  if (comodos.length === 0) {
+    el.innerHTML = '<div class="vazio">Nenhum cômodo cadastrado ainda.</div>';
+  } else {
+    el.innerHTML = comodos.map((c, i) => `
+      <div class="comodo">
+        <img src="${c.thumb}" alt="">
+        <div class="info">
+          <div class="nome">${escapeHtml(c.nome)}</div>
+          <div class="area">${formatarArea(c.areaM2)}</div>
+        </div>
+        <button class="btn-danger" onclick="removerComodo(${i})">Excluir</button>
+      </div>
+    `).join('');
+  }
+  const total = comodos.reduce((s, c) => s + c.areaM2, 0);
+  document.getElementById('total-area').textContent = formatarArea(total);
+  document.getElementById('total-count').textContent = comodos.length;
+}
+function formatarArea(m2) {
+  return m2.toFixed(2).replace('.', ',') + ' m²';
+}
+function escapeHtml(s) {
+  return s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function removerComodo(i) {
+  if (!confirm(`Remover "${comodos[i].nome}"?`)) return;
+  comodos.splice(i, 1);
+  salvar();
+  renderLista();
+}
+
+// -------- Fluxo de adição --------
+function iniciarAdicao() {
+  imgDataUrl = null;
+  imgEl = null;
+  pontosRef = [];
+  pontosComodo = [];
+  areaCalculada = null;
+  document.getElementById('arquivo-foto').value = '';
+  document.getElementById('nome-comodo').value = '';
+  document.getElementById('passo-upload').classList.remove('hidden');
+  document.getElementById('passo-referencia').classList.add('hidden');
+  document.getElementById('bloco-cantos-comodo').classList.add('hidden');
+  document.getElementById('bloco-resultado').classList.add('hidden');
+  document.getElementById('tela-lista').classList.add('hidden');
+  document.getElementById('tela-adicionar').classList.remove('hidden');
+}
+function voltarLista() {
+  document.getElementById('tela-adicionar').classList.add('hidden');
+  document.getElementById('tela-lista').classList.remove('hidden');
+}
+
+document.getElementById('arquivo-foto').addEventListener('change', async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const dataUrl = await lerArquivoRedimensionado(file, 1600);
+  imgDataUrl = dataUrl;
+  imgEl = await carregarImg(dataUrl);
+  document.getElementById('passo-upload').classList.add('hidden');
+  document.getElementById('passo-referencia').classList.remove('hidden');
+  desenhar();
+});
+
+function lerArquivoRedimensionado(file, maxLado) {
+  return new Promise((res, rej) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const img = new Image();
+      img.onload = () => {
+        const escala = Math.min(1, maxLado / Math.max(img.width, img.height));
+        const w = Math.round(img.width * escala);
+        const h = Math.round(img.height * escala);
+        const c = document.createElement('canvas');
+        c.width = w; c.height = h;
+        c.getContext('2d').drawImage(img, 0, 0, w, h);
+        res(c.toDataURL('image/jpeg', 0.85));
+      };
+      img.onerror = rej;
+      img.src = reader.result;
+    };
+    reader.onerror = rej;
+    reader.readAsDataURL(file);
+  });
+}
+function carregarImg(src) {
+  return new Promise((res, rej) => {
+    const img = new Image();
+    img.onload = () => res(img);
+    img.onerror = rej;
+    img.src = src;
+  });
+}
+
+// -------- Canvas / interação --------
+const canvas = document.getElementById('canvas-foto');
+const ctx = canvas.getContext('2d');
+
+function desenhar() {
+  if (!imgEl) return;
+  canvas.width = imgEl.width;
+  canvas.height = imgEl.height;
+  ctx.drawImage(imgEl, 0, 0);
+
+  // Desenha polígono da referência
+  desenharPoligono(pontosRef, '#f59e0b', pontosRef.length === 4);
+  // Desenha polígono do cômodo
+  desenharPoligono(pontosComodo, '#16a34a', pontosComodo.length === 4);
+
+  document.getElementById('cont-ref').textContent = pontosRef.length + '/4';
+  document.getElementById('cont-room').textContent = pontosComodo.length + '/4';
+}
+
+function desenharPoligono(pts, cor, fechado) {
+  if (pts.length === 0) return;
+  const r = Math.max(6, canvas.width / 120);
+  ctx.lineWidth = Math.max(2, canvas.width / 400);
+  ctx.strokeStyle = cor;
+  ctx.fillStyle = cor + '33';
+  ctx.beginPath();
+  ctx.moveTo(pts[0].x, pts[0].y);
+  for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i].x, pts[i].y);
+  if (fechado) { ctx.closePath(); ctx.fill(); }
+  ctx.stroke();
+  pts.forEach((p, i) => {
+    ctx.beginPath();
+    ctx.fillStyle = cor;
+    ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = 'white';
+    ctx.font = `bold ${r * 1.2}px sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(String(i + 1), p.x, p.y);
+  });
+}
+
+canvas.addEventListener('click', (e) => {
+  const rect = canvas.getBoundingClientRect();
+  const x = (e.clientX - rect.left) * (canvas.width / rect.width);
+  const y = (e.clientY - rect.top) * (canvas.height / rect.height);
+
+  if (pontosRef.length < 4) {
+    pontosRef.push({ x, y });
+    if (pontosRef.length === 4) {
+      document.getElementById('bloco-cantos-comodo').classList.remove('hidden');
+    }
+  } else if (pontosComodo.length < 4) {
+    pontosComodo.push({ x, y });
+    if (pontosComodo.length === 4) {
+      calcularArea();
+    }
+  }
+  desenhar();
+});
+
+function desfazerRef() {
+  if (pontosRef.length === 0) return;
+  pontosRef.pop();
+  pontosComodo = [];
+  document.getElementById('bloco-cantos-comodo').classList.add('hidden');
+  document.getElementById('bloco-resultado').classList.add('hidden');
+  desenhar();
+}
+function limparRef() {
+  pontosRef = [];
+  pontosComodo = [];
+  document.getElementById('bloco-cantos-comodo').classList.add('hidden');
+  document.getElementById('bloco-resultado').classList.add('hidden');
+  desenhar();
+}
+function desfazerComodo() {
+  if (pontosComodo.length === 0) return;
+  pontosComodo.pop();
+  document.getElementById('bloco-resultado').classList.add('hidden');
+  desenhar();
+}
+function limparComodo() {
+  pontosComodo = [];
+  document.getElementById('bloco-resultado').classList.add('hidden');
+  desenhar();
+}
+
+function atualizarMedidasRef() {
+  const tipo = document.getElementById('tipo-referencia').value;
+  const bloco = document.getElementById('medidas-personalizadas');
+  if (tipo === 'personalizado') {
+    bloco.classList.remove('hidden');
+  } else {
+    bloco.classList.add('hidden');
+  }
+  if (pontosComodo.length === 4) calcularArea();
+}
+
+function medidasReferencia() {
+  const tipo = document.getElementById('tipo-referencia').value;
+  const mapa = {
+    'A4':   { w: 21.0,  h: 29.7 },
+    'A3':   { w: 29.7,  h: 42.0 },
+    'carta':{ w: 21.6,  h: 27.9 },
+    'azulejo': { w: 30, h: 30 },
+  };
+  if (mapa[tipo]) return mapa[tipo];
+  return {
+    w: parseFloat(document.getElementById('ref-largura').value) || 21,
+    h: parseFloat(document.getElementById('ref-altura').value) || 29.7,
+  };
+}
+
+// -------- Homografia (DLT) --------
+// Mapeia ponto da imagem → coordenadas reais no plano do chão (cm).
+function computarHomografia(imgPts, worldPts) {
+  const A = [];
+  const b = [];
+  for (let i = 0; i < 4; i++) {
+    const { x, y } = imgPts[i];
+    const X = worldPts[i].x, Y = worldPts[i].y;
+    A.push([ x,  y,  1,  0,  0,  0, -X*x, -X*y ]);
+    b.push(X);
+    A.push([ 0,  0,  0,  x,  y,  1, -Y*x, -Y*y ]);
+    b.push(Y);
+  }
+  const h = resolverLinear(A, b);
+  return [
+    [h[0], h[1], h[2]],
+    [h[3], h[4], h[5]],
+    [h[6], h[7], 1  ],
+  ];
+}
+function aplicarH(H, p) {
+  const w = H[2][0]*p.x + H[2][1]*p.y + H[2][2];
+  return {
+    x: (H[0][0]*p.x + H[0][1]*p.y + H[0][2]) / w,
+    y: (H[1][0]*p.x + H[1][1]*p.y + H[1][2]) / w,
+  };
+}
+function resolverLinear(A, b) {
+  const n = b.length;
+  const M = A.map((r, i) => [...r, b[i]]);
+  for (let i = 0; i < n; i++) {
+    let maxR = i;
+    for (let k = i + 1; k < n; k++) {
+      if (Math.abs(M[k][i]) > Math.abs(M[maxR][i])) maxR = k;
+    }
+    [M[i], M[maxR]] = [M[maxR], M[i]];
+    if (Math.abs(M[i][i]) < 1e-12) throw new Error('Sistema singular — remarque os pontos.');
+    for (let k = i + 1; k < n; k++) {
+      const f = M[k][i] / M[i][i];
+      for (let j = i; j <= n; j++) M[k][j] -= f * M[i][j];
+    }
+  }
+  const x = new Array(n);
+  for (let i = n - 1; i >= 0; i--) {
+    let s = M[i][n];
+    for (let j = i + 1; j < n; j++) s -= M[i][j] * x[j];
+    x[i] = s / M[i][i];
+  }
+  return x;
+}
+function areaPoligono(pts) {
+  let a = 0;
+  for (let i = 0; i < pts.length; i++) {
+    const j = (i + 1) % pts.length;
+    a += pts[i].x * pts[j].y - pts[j].x * pts[i].y;
+  }
+  return Math.abs(a) / 2;
+}
+
+function calcularArea() {
+  try {
+    const { w, h } = medidasReferencia();
+    // Ordem: sup.esq, sup.dir, inf.dir, inf.esq → em cm
+    const refWorld = [
+      { x: 0, y: 0 },
+      { x: w, y: 0 },
+      { x: w, y: h },
+      { x: 0, y: h },
+    ];
+    const H = computarHomografia(pontosRef, refWorld);
+    const cantosReais = pontosComodo.map(p => aplicarH(H, p));
+    const areaCm2 = areaPoligono(cantosReais);
+    areaCalculada = areaCm2 / 10000; // cm² → m²
+    document.getElementById('area-calculada').textContent = formatarArea(areaCalculada);
+    document.getElementById('bloco-resultado').classList.remove('hidden');
+  } catch (e) {
+    alert('Erro no cálculo: ' + e.message);
+  }
+}
+
+function salvarComodo() {
+  const nome = document.getElementById('nome-comodo').value.trim();
+  if (!nome) { alert('Dê um nome ao cômodo.'); return; }
+  if (areaCalculada == null) { alert('Marque os cantos para calcular a área.'); return; }
+  const thumb = criarThumb(imgEl, 200);
+  comodos.push({
+    nome,
+    areaM2: areaCalculada,
+    thumb,
+    criadoEm: new Date().toISOString(),
+  });
+  salvar();
+  renderLista();
+  voltarLista();
+}
+
+function criarThumb(img, tam) {
+  const escala = tam / Math.max(img.width, img.height);
+  const w = Math.round(img.width * escala);
+  const h = Math.round(img.height * escala);
+  const c = document.createElement('canvas');
+  c.width = w; c.height = h;
+  c.getContext('2d').drawImage(img, 0, 0, w, h);
+  return c.toDataURL('image/jpeg', 0.7);
+}
+
+// Inicializa
+renderLista();
+</script>
+</body>
+</html>
