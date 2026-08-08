@@ -173,26 +173,53 @@ function setStatus(msg, tipo) {
 }
 
 // Vários proxies como fallback — se um cair, tenta o próximo.
+// Cada entrada é { nome, url(u), extrair(response) } — extrair sabe pegar o texto
+// do formato específico daquele proxy (alguns devolvem JSON envolvente).
 const PROXIES = [
-  (u) => 'https://api.allorigins.win/raw?url=' + encodeURIComponent(u),
-  (u) => 'https://corsproxy.io/?' + encodeURIComponent(u),
-  (u) => 'https://cors.eu.org/' + u,
+  { nome: 'allorigins-raw',
+    url: (u) => 'https://api.allorigins.win/raw?url=' + encodeURIComponent(u),
+    extrair: async (r) => r.text() },
+  { nome: 'allorigins-json',
+    url: (u) => 'https://api.allorigins.win/get?url=' + encodeURIComponent(u),
+    extrair: async (r) => { const j = await r.json(); return j.contents; } },
+  { nome: 'corsproxy.io',
+    url: (u) => 'https://corsproxy.io/?' + encodeURIComponent(u),
+    extrair: async (r) => r.text() },
+  { nome: 'codetabs',
+    url: (u) => 'https://api.codetabs.com/v1/proxy?quest=' + encodeURIComponent(u),
+    extrair: async (r) => r.text() },
+  { nome: 'cors.lol',
+    url: (u) => 'https://api.cors.lol/?url=' + encodeURIComponent(u),
+    extrair: async (r) => r.text() },
+  { nome: 'thingproxy',
+    url: (u) => 'https://thingproxy.freeboard.io/fetch/' + u,
+    extrair: async (r) => r.text() },
 ];
 
 async function fetchViaProxy(url) {
-  let ultimoErro = null;
+  const erros = [];
   for (const proxy of PROXIES) {
     try {
-      const r = await fetch(proxy(url), { cache: 'no-store' });
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 15000);
+      const r = await fetch(proxy.url(url), {
+        cache: 'no-store',
+        signal: controller.signal,
+      });
+      clearTimeout(timer);
       if (!r.ok) throw new Error('HTTP ' + r.status);
-      const t = await r.text();
+      const t = await proxy.extrair(r);
       if (!t || t.length < 20) throw new Error('resposta vazia');
       return t;
     } catch (e) {
-      ultimoErro = e;
+      erros.push(`${proxy.nome}: ${e.message}`);
     }
   }
-  throw new Error('Todos os proxies falharam: ' + (ultimoErro?.message || 'desconhecido'));
+  throw new Error(
+    'Todos os proxies falharam. Detalhes: ' + erros.join(' | ') +
+    '. Isso geralmente é temporário — tente daqui a alguns minutos, ' +
+    'ou salve o arquivo e abra localmente (proxies bloqueiam origens diferentes).'
+  );
 }
 
 // ------- Fluxo principal -------
