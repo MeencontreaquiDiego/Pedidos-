@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Transcrição de vídeo do YouTube</title>
+<style>
+  :root {
+    --bg: #f3f4f6;
+    --card: #ffffff;
+    --text: #1f2937;
+    --muted: #6b7280;
+    --primary: #dc2626;
+    --primary-hover: #b91c1c;
+    --border: #e5e7eb;
+    --success: #16a34a;
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, 'Segoe UI', Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    margin: 0;
+    padding: 16px;
+    display: flex;
+    justify-content: center;
+  }
+  .app { width: 100%; max-width: 720px; }
+  h1 { font-size: 20px; margin: 8px 0 12px; text-align: center; }
+  .card {
+    background: var(--card);
+    border-radius: 12px;
+    padding: 16px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+    margin-bottom: 12px;
+  }
+  label { font-size: 14px; font-weight: 600; color: #4b5563; display: block; margin-bottom: 6px; }
+  input[type="text"], select {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 15px;
+    font-family: inherit;
+  }
+  button {
+    cursor: pointer;
+    border: none;
+    border-radius: 8px;
+    font-size: 15px;
+    font-weight: 600;
+    padding: 12px 16px;
+    font-family: inherit;
+  }
+  .btn-primary { background: var(--primary); color: white; width: 100%; margin-top: 10px; }
+  .btn-primary:hover { background: var(--primary-hover); }
+  .btn-primary:disabled { background: #9ca3af; cursor: not-allowed; }
+  .btn-sec { background: #e5e7eb; color: var(--text); padding: 8px 12px; font-size: 13px; }
+  .row { display: flex; gap: 8px; flex-wrap: wrap; }
+  .status {
+    padding: 10px 12px;
+    border-radius: 8px;
+    font-size: 14px;
+    margin: 10px 0;
+  }
+  .status.info { background: #eff6ff; color: #1e40af; }
+  .status.err { background: #fef2f2; color: var(--primary); }
+  .status.ok { background: #f0fdf4; color: var(--success); }
+  .video-info { display: flex; gap: 12px; align-items: center; margin-bottom: 12px; }
+  .video-info img { width: 120px; border-radius: 8px; }
+  .video-info .titulo { font-weight: 600; font-size: 15px; }
+  .transcript {
+    white-space: pre-wrap;
+    font-family: -apple-system, 'Segoe UI', Roboto, sans-serif;
+    font-size: 15px;
+    line-height: 1.6;
+    max-height: 500px;
+    overflow-y: auto;
+    background: #f9fafb;
+    padding: 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+  }
+  .toolbar {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    margin-bottom: 8px;
+    flex-wrap: wrap;
+  }
+  .toolbar label { margin: 0; font-weight: 500; }
+  .toggle { display: flex; align-items: center; gap: 6px; font-size: 14px; }
+  .hidden { display: none !important; }
+  .ts { color: var(--muted); font-size: 12px; margin-right: 6px; }
+  .spinner {
+    display: inline-block;
+    width: 14px; height: 14px;
+    border: 2px solid #d1d5db;
+    border-top-color: var(--primary);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    vertical-align: middle;
+    margin-right: 6px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  small.muted { color: var(--muted); font-size: 12px; display:block; margin-top:6px; }
+</style>
+</head>
+<body>
+<div class="app">
+  <h1>▶️ Transcrição de vídeo do YouTube</h1>
+
+  <div class="card">
+    <label for="url">Cole a URL do vídeo</label>
+    <input type="text" id="url" placeholder="https://www.youtube.com/watch?v=...">
+    <button class="btn-primary" id="btn-buscar" onclick="buscar()">Buscar transcrição</button>
+    <small class="muted">Funciona para vídeos que têm legenda (manual ou automática do YouTube).</small>
+  </div>
+
+  <div id="status-box"></div>
+
+  <div class="card hidden" id="card-idiomas">
+    <label>Idioma da legenda</label>
+    <select id="sel-idioma" onchange="carregarIdioma()"></select>
+  </div>
+
+  <div class="card hidden" id="card-resultado">
+    <div class="video-info">
+      <img id="thumb" src="" alt="">
+      <div>
+        <div class="titulo" id="titulo-video">—</div>
+        <a id="link-video" href="#" target="_blank" style="font-size:13px; color:var(--muted)">Abrir no YouTube</a>
+      </div>
+    </div>
+
+    <div class="toolbar">
+      <label class="toggle">
+        <input type="checkbox" id="chk-timestamps" onchange="renderTranscript()">
+        Mostrar tempos
+      </label>
+      <span style="flex:1"></span>
+      <button class="btn-sec" onclick="copiar()">📋 Copiar</button>
+      <button class="btn-sec" onclick="baixarTxt()">⬇️ Baixar .txt</button>
+    </div>
+
+    <div class="transcript" id="transcript"></div>
+  </div>
+</div>
+
+<script>
+// ------- Estado -------
+let captionTracks = [];   // lista de faixas de legenda (do vídeo atual)
+let cuesAtuais = [];      // [{start, dur, text}]
+let videoIdAtual = null;
+let tituloAtual = '';
+
+// ------- Utilidades -------
+function extrairVideoId(url) {
+  if (!url) return null;
+  const m = url.trim().match(
+    /(?:youtu\.be\/|youtube\.com\/(?:watch\?(?:.*&)?v=|embed\/|shorts\/|v\/))([\w-]{11})/
+  );
+  if (m) return m[1];
+  const puro = url.trim().match(/^[\w-]{11}$/);
+  return puro ? puro[0] : null;
+}
+
+function setStatus(msg, tipo) {
+  const box = document.getElementById('status-box');
+  if (!msg) { box.innerHTML = ''; return; }
+  const spinner = tipo === 'info' ? '<span class="spinner"></span>' : '';
+  box.innerHTML = `<div class="status ${tipo}">${spinner}${msg}</div>`;
+}
+
+// Vários proxies como fallback — se um cair, tenta o próximo.
+const PROXIES = [
+  (u) => 'https://api.allorigins.win/raw?url=' + encodeURIComponent(u),
+  (u) => 'https://corsproxy.io/?' + encodeURIComponent(u),
+  (u) => 'https://cors.eu.org/' + u,
+];
+
+async function fetchViaProxy(url) {
+  let ultimoErro = null;
+  for (const proxy of PROXIES) {
+    try {
+      const r = await fetch(proxy(url), { cache: 'no-store' });
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      const t = await r.text();
+      if (!t || t.length < 20) throw new Error('resposta vazia');
+      return t;
+    } catch (e) {
+      ultimoErro = e;
+    }
+  }
+  throw new Error('Todos os proxies falharam: ' + (ultimoErro?.message || 'desconhecido'));
+}
+
+// ------- Fluxo principal -------
+async function buscar() {
+  const url = document.getElementById('url').value;
+  const id = extrairVideoId(url);
+  if (!id) {
+    setStatus('URL inválida. Cole um link do YouTube (ex: https://youtu.be/abc123...)', 'err');
+    return;
+  }
+  videoIdAtual = id;
+  document.getElementById('card-idiomas').classList.add('hidden');
+  document.getElementById('card-resultado').classList.add('hidden');
+  document.getElementById('btn-buscar').disabled = true;
+  setStatus('Carregando dados do vídeo…', 'info');
+
+  try {
+    const html = await fetchViaProxy(`https://www.youtube.com/watch?v=${id}&hl=pt-BR`);
+    const dados = extrairDadosDoHtml(html);
+    if (!dados.captionTracks || dados.captionTracks.length === 0) {
+      throw new Error('Esse vídeo não tem legendas disponíveis no YouTube.');
+    }
+    captionTracks = dados.captionTracks;
+    tituloAtual = dados.titulo || 'Vídeo do YouTube';
+
+    // Popula dropdown de idiomas
+    const sel = document.getElementById('sel-idioma');
+    sel.innerHTML = '';
+    captionTracks.forEach((t, i) => {
+      const nome = t.name || t.languageCode || ('Faixa ' + (i+1));
+      const auto = t.kind === 'asr' ? ' (automática)' : '';
+      const opt = document.createElement('option');
+      opt.value = i;
+      opt.textContent = `${nome}${auto}`;
+      sel.appendChild(opt);
+    });
+
+    // Escolhe idioma inicial: pt-BR > pt > primeiro
+    let escolhido = captionTracks.findIndex(t => (t.languageCode||'').toLowerCase() === 'pt-br');
+    if (escolhido < 0) escolhido = captionTracks.findIndex(t => (t.languageCode||'').toLowerCase().startsWith('pt'));
+    if (escolhido < 0) escolhido = 0;
+    sel.value = escolhido;
+
+    // Preenche painel do vídeo
+    document.getElementById('titulo-video').textContent = tituloAtual;
+    document.getElementById('thumb').src = `https://img.youtube.com/vi/${id}/hqdefault.jpg`;
+    document.getElementById('link-video').href = `https://www.youtube.com/watch?v=${id}`;
+
+    document.getElementById('card-idiomas').classList.remove('hidden');
+    await carregarIdioma();
+  } catch (e) {
+    setStatus('Erro: ' + e.message, 'err');
+  } finally {
+    document.getElementById('btn-buscar').disabled = false;
+  }
+}
+
+async function carregarIdioma() {
+  const idx = parseInt(document.getElementById('sel-idioma').value, 10);
+  const track = captionTracks[idx];
+  if (!track) return;
+  setStatus('Baixando legenda…', 'info');
+  try {
+    const xml = await fetchViaProxy(track.baseUrl);
+    cuesAtuais = parsearLegendaXml(xml);
+    if (cuesAtuais.length === 0) throw new Error('Legenda vazia.');
+    document.getElementById('card-resultado').classList.remove('hidden');
+    renderTranscript();
+    setStatus(`Transcrição pronta — ${cuesAtuais.length} trechos.`, 'ok');
+  } catch (e) {
+    setStatus('Erro ao baixar legenda: ' + e.message, 'err');
+  }
+}
+
+// ------- Extração / parsing -------
+function extrairDadosDoHtml(html) {
+  // Encontra o JSON ytInitialPlayerResponse
+  const m = html.match(/ytInitialPlayerResponse\s*=\s*(\{.+?\})\s*;\s*(?:var|<\/script>)/s);
+  let data;
+  if (m) {
+    try { data = JSON.parse(m[1]); } catch { data = null; }
+  }
+  if (!data) {
+    // Fallback: procura o bloco de captionTracks direto
+    const m2 = html.match(/"captionTracks":\s*(\[[^\]]+\])/);
+    if (m2) {
+      try {
+        const tracks = JSON.parse(m2[1]);
+        return { titulo: extrairTitulo(html), captionTracks: normalizarTracks(tracks) };
+      } catch {}
+    }
+    throw new Error('Não foi possível ler os dados do vídeo. YouTube pode ter bloqueado a página (tente outro vídeo).');
+  }
+  const tracks = data?.captions?.playerCaptionsTracklistRenderer?.captionTracks || [];
+  const titulo = data?.videoDetails?.title || extrairTitulo(html);
+  return { titulo, captionTracks: normalizarTracks(tracks) };
+}
+
+function normalizarTracks(tracks) {
+  return tracks.map(t => ({
+    baseUrl: t.baseUrl,
+    languageCode: t.languageCode,
+    kind: t.kind,
+    name: t.name?.simpleText || t.name?.runs?.[0]?.text || t.languageCode,
+  }));
+}
+
+function extrairTitulo(html) {
+  const m = html.match(/<title>([^<]+)<\/title>/);
+  if (!m) return '';
+  return m[1].replace(/ - YouTube$/, '').trim();
+}
+
+function parsearLegendaXml(xml) {
+  const cues = [];
+  // Formato clássico: <text start="1.2" dur="3.4">conteúdo</text>
+  const re = /<text([^>]*)>([\s\S]*?)<\/text>/g;
+  let m;
+  while ((m = re.exec(xml)) !== null) {
+    const attrs = m[1];
+    const startMatch = attrs.match(/start="([\d.]+)"/);
+    const durMatch = attrs.match(/dur="([\d.]+)"/);
+    const start = startMatch ? parseFloat(startMatch[1]) : 0;
+    const dur = durMatch ? parseFloat(durMatch[1]) : 0;
+    const text = decodificarHtml(m[2]).replace(/\n+/g, ' ').trim();
+    if (text) cues.push({ start, dur, text });
+  }
+  return cues;
+}
+
+function decodificarHtml(s) {
+  const txt = document.createElement('textarea');
+  txt.innerHTML = s;
+  return txt.value;
+}
+
+function fmtTempo(seg) {
+  const s = Math.floor(seg);
+  const h = Math.floor(s / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  const r = s % 60;
+  const pad = (n) => String(n).padStart(2, '0');
+  return h > 0 ? `${h}:${pad(m)}:${pad(r)}` : `${m}:${pad(r)}`;
+}
+
+// ------- Renderização e exportação -------
+function renderTranscript() {
+  const mostrarTs = document.getElementById('chk-timestamps').checked;
+  const el = document.getElementById('transcript');
+  if (mostrarTs) {
+    el.innerHTML = cuesAtuais.map(c =>
+      `<span class="ts">[${fmtTempo(c.start)}]</span>${escapeHtml(c.text)}`
+    ).join('\n');
+  } else {
+    // Junta em parágrafo contínuo, quebrando a cada ~500 caracteres para leitura.
+    const texto = cuesAtuais.map(c => c.text).join(' ');
+    el.textContent = quebrarParagrafos(texto);
+  }
+}
+
+function quebrarParagrafos(texto) {
+  const alvo = 500;
+  let out = '';
+  let atual = '';
+  const frases = texto.split(/([.!?]+\s+)/);
+  for (let i = 0; i < frases.length; i += 2) {
+    const frag = (frases[i] || '') + (frases[i+1] || '');
+    atual += frag;
+    if (atual.length >= alvo) {
+      out += atual.trim() + '\n\n';
+      atual = '';
+    }
+  }
+  if (atual.trim()) out += atual.trim();
+  return out;
+}
+
+function escapeHtml(s) {
+  return s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function textoParaExportar() {
+  const mostrarTs = document.getElementById('chk-timestamps').checked;
+  if (mostrarTs) {
+    return cuesAtuais.map(c => `[${fmtTempo(c.start)}] ${c.text}`).join('\n');
+  }
+  return quebrarParagrafos(cuesAtuais.map(c => c.text).join(' '));
+}
+
+async function copiar() {
+  try {
+    await navigator.clipboard.writeText(textoParaExportar());
+    setStatus('Copiado para a área de transferência.', 'ok');
+  } catch {
+    setStatus('Não foi possível copiar automaticamente. Selecione o texto e copie manualmente.', 'err');
+  }
+}
+
+function baixarTxt() {
+  const conteudo = `${tituloAtual}\nhttps://www.youtube.com/watch?v=${videoIdAtual}\n\n${textoParaExportar()}`;
+  const blob = new Blob([conteudo], { type: 'text/plain;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  const nomeSeguro = tituloAtual.replace(/[^\w\s-]/g, '').substring(0, 60).trim() || 'transcricao';
+  a.download = `${nomeSeguro}.txt`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+// Enter no campo dispara a busca
+document.getElementById('url').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') buscar();
+});
+</script>
+</body>
+</html>
